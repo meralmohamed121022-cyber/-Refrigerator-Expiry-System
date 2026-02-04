@@ -399,7 +399,82 @@
         .manual-date-tag button:hover {
             background: rgba(255, 255, 255, 0.5);
         }
-        
+        /* ⭐ Table Actions ⭐ */
+.table-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.btn-icon {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-edit {
+    background: #3498db;
+    color: white;
+}
+
+.btn-edit:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+}
+
+.btn-delete {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-delete:hover {
+    background: #c0392b;
+    transform: translateY(-1px);
+}
+
+.checkbox-cell {
+    text-align: center;
+}
+
+.checkbox-cell input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* Edit Modal Styles */
+.edit-dates-container {
+    margin: 20px 0;
+}
+
+.edit-date-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.edit-date-item input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.print-selected-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    margin-left: 10px;
+}
+
     </style>
 </head>
 <body>
@@ -426,14 +501,18 @@
     <button class="btn btn-success" onclick="exportToExcel()">📊 Export Excel</button>
     <button class="btn btn-danger" onclick="openResetModal()">🗑️ Reset</button>
 </div>
-
-<!-- ⭐ ضيف ده هنا ⭐ -->
+<!-- ⭐ Replace existing Registered Items Card ⭐ -->
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin: 0; color: var(--primary);">👁️ Registered Items</h2>
-        <button class="btn btn-info" onclick="refreshViewTable()" style="padding: 8px 16px; font-size: 0.85rem;">
-            🔄 Refresh
-        </button>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-purple print-selected-btn" onclick="printSelectedItems()" style="padding: 8px 16px; font-size: 0.85rem;">
+                🖨️ Print Selected
+            </button>
+            <button class="btn btn-info" onclick="refreshViewTable()" style="padding: 8px 16px; font-size: 0.85rem;">
+                🔄 Refresh
+            </button>
+        </div>
     </div>
     
     <div style="margin-bottom:15px; padding:10px; background:#fff3cd; border-left:4px solid #f39c12; border-radius:4px;">
@@ -444,17 +523,72 @@
         <table class="view-table">
             <thead>
                 <tr>
+                    <th class="checkbox-cell">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                    </th>
                     <th>#</th>
                     <th>Code</th>
                     <th>Description</th>
                     <th>Expiry</th>
                     <th>Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="viewTableBody">
-                <tr><td colspan="5" style="text-align:center; padding: 20px; color: #95a5a6;">Loading data...</td></tr>
+                <tr><td colspan="7" style="text-align:center; padding: 20px; color: #95a5a6;">Loading data...</td></tr>
             </tbody>
         </table>
+    </div>
+</div>
+<!-- ⭐ Add this before closing body tag ⭐ -->
+<!-- ⭐ EDIT ITEM MODAL ⭐ -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>✏️ Edit Item Dates</h2>
+            <span class="close-modal" onclick="closeEditModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div style="margin-bottom: 15px;">
+                <strong>Item:</strong> <span id="editItemName"></span><br>
+                <strong>Code:</strong> <span id="editItemCode"></span>
+            </div>
+            
+            <div class="edit-dates-container">
+                <strong>Current Expiry Dates:</strong>
+                <div id="editDatesList" style="margin-top: 15px;"></div>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
+                <strong>Add New Date:</strong>
+                <div class="add-date-wrapper" style="margin-top: 10px;">
+                    <div class="date-input-group" style="margin:0;">
+                        <input 
+                            type="number" 
+                            id="editNewMonthNum" 
+                            class="month-input"
+                            placeholder="MM" 
+                            min="1" 
+                            max="12"
+                        >
+                        <span class="date-separator">/</span>
+                        <input 
+                            type="number" 
+                            id="editNewYearNum" 
+                            class="year-input"
+                            placeholder="YY" 
+                            min="00" 
+                            max="99"
+                        >
+                    </div>
+                    <button class="btn btn-primary" onclick="addNewDateToEdit()" style="padding: 8px 16px;">+ Add</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" style="background:#7f8c8d; color:white;" onclick="closeEditModal()">Close</button>
+            <button class="btn btn-success" onclick="saveEditedDates()">💾 Save Changes</button>
+        </div>
     </div>
 </div>
 
@@ -70834,21 +70968,23 @@ async function executeClearData() {
             });
             return parts; 
         }
-     function refreshViewTable() {
+       let selectedItems = new Set(); // Track selected items
+
+function refreshViewTable() {
     const ph = document.getElementById('pharmacyInput').value;
     const risks = getRiskDates();
     
     const tbody = document.getElementById('viewTableBody');
     
     if(!risks) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #f39c12;">⚠️ Please select a Report Month first</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: #f39c12;">⚠️ Please select a Report Month first</td></tr>';
         return;
     }
     
     const items = allExpiries.filter(x => x.ph === ph).sort((a,b) => a.name.localeCompare(b.name));
     
     if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #95a5a6;">📭 No data available</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: #95a5a6;">📭 No data available</td></tr>';
         return;
     }
     
@@ -70867,16 +71003,33 @@ async function executeClearData() {
         
         const tr = document.createElement('tr');
         if(isAlert) tr.className = "row-alert";
+        
+        const isChecked = selectedItems.has(item.id);
+        
         tr.innerHTML = `
+            <td class="checkbox-cell">
+                <input type="checkbox" class="item-checkbox" data-id="${item.id}" ${isChecked ? 'checked' : ''} onchange="toggleItemSelection(${item.id})">
+            </td>
             <td>${index + 1}</td>
             <td>${item.code}</td>
             <td>${item.name}</td>
             <td>${formatShortDate(item.date)}</td>
             <td>${statusText}</td>
+            <td>
+                <div class="table-actions">
+                    <button class="btn-icon btn-edit" onclick="openEditItem('${item.code}', '${item.name.replace(/'/g, "\\'")}')">
+                        ✏️ Edit
+                    </button>
+                    <button class="btn-icon btn-delete" onclick="deleteItemCompletely('${item.code}')">
+                        🗑️ Delete
+                    </button>
+                </div>
+            </td>
         `;
         tbody.appendChild(tr);
     });
 }
+
 
         function prepareReportData() {
             const ph = document.getElementById('pharmacyInput').value;
@@ -70970,6 +71123,266 @@ function convertToISO(month, year) {
     const fullYear = 2000 + y;
     
     return `${fullYear}-${String(m).padStart(2, '0')}`;
+}
+// ⭐ Selection Functions ⭐
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.item-checkbox');
+    
+    checkboxes.forEach(cb => {
+        cb.checked = selectAll.checked;
+        const id = parseInt(cb.dataset.id);
+        if (selectAll.checked) {
+            selectedItems.add(id);
+        } else {
+            selectedItems.delete(id);
+        }
+    });
+}
+
+function toggleItemSelection(id) {
+    if (selectedItems.has(id)) {
+        selectedItems.delete(id);
+    } else {
+        selectedItems.add(id);
+    }
+    
+    // Update "Select All" checkbox
+    const checkboxes = document.querySelectorAll('.item-checkbox');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    document.getElementById('selectAll').checked = allChecked;
+}
+
+// ⭐ Print Selected Items ⭐
+function printSelectedItems() {
+    if (selectedItems.size === 0) {
+        showToast('warning', 'No Selection', 'Please select items to print');
+        return;
+    }
+    
+    const ph = document.getElementById('pharmacyInput').value;
+    const area = document.getElementById('areaInput').value;
+    const monthVal = document.getElementById('reportMonth').value;
+    
+    // Filter only selected items
+    const filtered = allExpiries.filter(x => x.ph === ph && selectedItems.has(x.id));
+    
+    // Group by code
+    const grouped = {};
+    filtered.forEach(x => {
+        if(!grouped[x.code]) grouped[x.code] = { name: x.name, rawDates: [] };
+        grouped[x.code].rawDates.push(x.date);
+    });
+    
+    const items = Object.values(grouped).sort((a,b) => a.name.localeCompare(b.name));
+    
+    // Prepare print section
+    document.getElementById('printMonthDisplay').innerText = `MONTH | ${formatMonthLabel(monthVal)}`;
+    document.getElementById('printAreaDisplay').innerHTML = `AREA: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${area.toUpperCase()}`;
+    document.getElementById('printPhDisplay').innerText = ph;
+    
+    const tbody = document.getElementById('printTableBody');
+    tbody.innerHTML = '';
+    
+    const minRows = Math.max(items.length, 38);
+    for(let i=0; i<minRows; i++) {
+        const item = items[i];
+        let col1='', col2='', col3='', name='', id='';
+        if(item) {
+            id = i + 1; 
+            name = item.name;
+            const groupedStrings = groupDatesSmartly(item.rawDates);
+            col1 = groupedStrings[0] || '';
+            col2 = groupedStrings[1] || '';
+            col3 = groupedStrings.slice(2).join(', '); 
+        }
+        const tr = document.createElement('tr');
+        tr.className = 'data-row';
+        tr.innerHTML = `<td class="id-cell">${id}</td><td class="desc-cell">${name}</td><td class="date-cell">${col1}</td><td class="date-cell">${col2}</td><td class="date-cell">${col3}</td>`;
+        tbody.appendChild(tr);
+    }
+    
+    window.print();
+    showToast('success', 'Print Ready', `Printing ${selectedItems.size} selected items`);
+}
+
+// ⭐ Delete Item Completely ⭐
+async function deleteItemCompletely(code) {
+    const ph = document.getElementById('pharmacyInput').value;
+    const itemsToDelete = allExpiries.filter(x => x.ph === ph && x.code === code);
+    
+    if (itemsToDelete.length === 0) return;
+    
+    const confirmModal = document.createElement('div');
+    confirmModal.className = 'custom-modal-overlay active';
+    confirmModal.innerHTML = `
+        <div class="confirm-card">
+            <div class="warning-icon"><span>!</span></div>
+            <h3>Delete Confirmation</h3>
+            <p>Delete <strong>${itemsToDelete[0].name}</strong>?<br>
+            This will remove <strong>${itemsToDelete.length} expiry date(s)</strong></p>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="this.closest('.custom-modal-overlay').remove()">Cancel</button>
+                <button class="btn-confirm" onclick="confirmDeleteItem('${code}')">Yes, Delete All</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(confirmModal);
+}
+
+async function confirmDeleteItem(code) {
+    const ph = document.getElementById('pharmacyInput').value;
+    const itemsToDelete = allExpiries.filter(x => x.ph === ph && x.code === code);
+    const ids = itemsToDelete.map(x => x.id);
+    
+    try {
+        const { error } = await sb.from('expiry_items').delete().in('id', ids);
+        if (error) throw error;
+        
+        allExpiries = allExpiries.filter(x => !ids.includes(x.id));
+        localStorage.setItem('expiryData_v8', JSON.stringify(allExpiries));
+        
+        // Remove from selection
+        ids.forEach(id => selectedItems.delete(id));
+        
+        refreshViewTable();
+        document.querySelector('.custom-modal-overlay:not(#resetModal):not(#editModal)').remove();
+        
+        showToast('success', 'Deleted', `${itemsToDelete[0].name} removed successfully`);
+    } catch (err) {
+        showToast('error', 'Error', err.message);
+    }
+}
+
+// ⭐ Edit Item Functions ⭐
+let editingCode = null;
+let editingName = null;
+let editDatesToDelete = new Set();
+
+function openEditItem(code, name) {
+    editingCode = code;
+    editingName = name;
+    editDatesToDelete.clear();
+    
+    const ph = document.getElementById('pharmacyInput').value;
+    const items = allExpiries.filter(x => x.ph === ph && x.code === code);
+    
+    document.getElementById('editItemName').textContent = name;
+    document.getElementById('editItemCode').textContent = code;
+    
+    renderEditDates(items);
+    document.getElementById('editModal').style.display = 'block';
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+    editingCode = null;
+    editingName = null;
+    editDatesToDelete.clear();
+}
+
+function renderEditDates(items) {
+    const container = document.getElementById('editDatesList');
+    container.innerHTML = '';
+    
+    items.forEach(item => {
+        const isMarkedForDeletion = editDatesToDelete.has(item.id);
+        
+        const div = document.createElement('div');
+        div.className = 'edit-date-item';
+        div.style.opacity = isMarkedForDeletion ? '0.5' : '1';
+        div.style.textDecoration = isMarkedForDeletion ? 'line-through' : 'none';
+        
+        div.innerHTML = `
+            <span style="flex: 1; font-weight: bold;">📅 ${formatShortDate(item.date)}</span>
+            <button class="btn-icon ${isMarkedForDeletion ? 'btn-warning' : 'btn-delete'}" 
+                    onclick="toggleDateDeletion(${item.id})" 
+                    style="padding: 6px 12px;">
+                ${isMarkedForDeletion ? '↶ Undo' : '🗑️ Remove'}
+            </button>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function toggleDateDeletion(id) {
+    if (editDatesToDelete.has(id)) {
+        editDatesToDelete.delete(id);
+    } else {
+        editDatesToDelete.add(id);
+    }
+    
+    const ph = document.getElementById('pharmacyInput').value;
+    const items = allExpiries.filter(x => x.ph === ph && x.code === editingCode);
+    renderEditDates(items);
+}
+
+async function addNewDateToEdit() {
+    const month = document.getElementById('editNewMonthNum').value;
+    const year = document.getElementById('editNewYearNum').value;
+    const date = convertToISO(month, year);
+    
+    if (!date) {
+        showToast('warning', 'Invalid Date', 'Please enter valid month and year');
+        return;
+    }
+    
+    const ph = document.getElementById('pharmacyInput').value;
+    const area = document.getElementById('areaInput').value;
+    
+    const newItem = { 
+        ph, 
+        area, 
+        code: editingCode, 
+        name: editingName, 
+        date 
+    };
+    
+    try {
+        const { data, error } = await sb.from('expiry_items').insert([newItem]).select();
+        if (error) throw error;
+        
+        allExpiries.push({ id: data[0].id, ...newItem });
+        localStorage.setItem('expiryData_v8', JSON.stringify(allExpiries));
+        
+        // Refresh edit modal
+        const items = allExpiries.filter(x => x.ph === ph && x.code === editingCode);
+        renderEditDates(items);
+        
+        document.getElementById('editNewMonthNum').value = '';
+        document.getElementById('editNewYearNum').value = '';
+        
+        showToast('success', 'Date Added', `Added ${formatShortDate(date)}`);
+    } catch (err) {
+        showToast('error', 'Error', err.message);
+    }
+}
+
+async function saveEditedDates() {
+    if (editDatesToDelete.size === 0) {
+        closeEditModal();
+        showToast('info', 'No Changes', 'No dates were removed');
+        return;
+    }
+    
+    try {
+        const idsArray = Array.from(editDatesToDelete);
+        const { error } = await sb.from('expiry_items').delete().in('id', idsArray);
+        if (error) throw error;
+        
+        allExpiries = allExpiries.filter(x => !editDatesToDelete.has(x.id));
+        localStorage.setItem('expiryData_v8', JSON.stringify(allExpiries));
+        
+        // Remove from selection
+        idsArray.forEach(id => selectedItems.delete(id));
+        
+        closeEditModal();
+        refreshViewTable();
+        
+        showToast('success', 'Saved', `Removed ${idsArray.length} expiry date(s)`);
+    } catch (err) {
+        showToast('error', 'Error', err.message);
+    }
 }
 
     </script>
