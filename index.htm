@@ -350,6 +350,56 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
+
+        /* ⭐ MANUAL DATES CONTAINER ⭐ */
+        .manual-dates-container {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .manual-dates-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .manual-date-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            animation: popIn 0.3s ease;
+        }
+
+        .manual-date-tag button {
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.1em;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        .manual-date-tag button:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
     </style>
 </head>
 <body>
@@ -363,29 +413,52 @@
                 <div class="input-group"><label>Pharmacy Number</label><input list="pharmacies" id="pharmacyInput" placeholder="PH-0066" onchange="refreshData()"><datalist id="pharmacies"></datalist></div>
                 <div class="input-group"><label>Area Name</label><input type="text" id="areaInput" value="HOFUF I"></div>
                 <div class="input-group"><label>Report Month</label><input type="month" id="reportMonth" onchange="refreshData()"><div id="monthLabelDisplay"></div></div>
-            </div>
-            <div class="btn-row" style="justify-content: flex-start;"><button class="btn btn-info" onclick="openViewModal()">👁️ View All Data</button></div>
+         
         </div>
         <div class="card">
             <div class="input-group search-wrapper"><label>Search Product</label><input type="text" id="productSearch" placeholder="Type to search..." autocomplete="off"><div id="autocomplete-list" class="autocomplete-list"></div></div>
             <div id="actionArea"></div>
         </div>
-        <div class="btn-row">
-            <button class="btn btn-purple" onclick="openImportModal()">📥 Import Excel</button>
-            <button class="btn btn-dark" onclick="printReport()">🖨️ Print</button>
-            <button class="btn btn-success" onclick="exportToExcel()">📊 Export Excel</button>
-            <button class="btn btn-danger" onclick="openResetModal()">🗑️ Reset</button>
-        </div>
-    </div>
+       <!-- بعد الـ btn-row الأخيرة -->
+<div class="btn-row">
+    <button class="btn btn-purple" onclick="openImportModal()">📥 Import Excel</button>
+    <button class="btn btn-dark" onclick="printReport()">🖨️ Print</button>
+    <button class="btn btn-success" onclick="exportToExcel()">📊 Export Excel</button>
+    <button class="btn btn-danger" onclick="openResetModal()">🗑️ Reset</button>
+</div>
 
-    <!-- ⭐ VIEW MODAL ⭐ -->
-    <div id="viewModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header"><h2>Registered Items</h2><span class="close-modal" onclick="closeViewModal()">&times;</span></div>
-            <div class="modal-body">
-                <div style="margin-bottom:15px; padding:10px; background:#fff3cd; border-left:4px solid #f39c12; border-radius:4px;"><strong>Alert:</strong> Items in <span style="color:#c62828; font-weight:bold;">RED</span> expire soon.</div>
-                <table class="view-table"><thead><tr><th>#</th><th>Code</th><th>Description</th><th>Expiry</th><th>Status</th></tr></thead><tbody id="viewTableBody"></tbody></table>
-            </div>
+<!-- ⭐ ضيف ده هنا ⭐ -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0; color: var(--primary);">👁️ Registered Items</h2>
+        <button class="btn btn-info" onclick="refreshViewTable()" style="padding: 8px 16px; font-size: 0.85rem;">
+            🔄 Refresh
+        </button>
+    </div>
+    
+    <div style="margin-bottom:15px; padding:10px; background:#fff3cd; border-left:4px solid #f39c12; border-radius:4px;">
+        <strong>Alert:</strong> Items in <span style="color:#c62828; font-weight:bold;">RED</span> expire soon.
+    </div>
+    
+    <div style="overflow-x: auto; max-height: 500px; overflow-y: auto;">
+        <table class="view-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Code</th>
+                    <th>Description</th>
+                    <th>Expiry</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="viewTableBody">
+                <tr><td colspan="5" style="text-align:center; padding: 20px; color: #95a5a6;">Loading data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+   
             <div class="modal-footer"><button class="btn btn-secondary" style="background:#7f8c8d; color:white;" onclick="closeViewModal()">Close</button></div>
         </div>
     </div>
@@ -415,7 +488,7 @@
                         <div class="import-preview-title">✅ File Loaded Successfully!</div>
                         <div id="fileName" style="color:#6b7280; margin-top:5px;"></div>
                         
-                        <div class="import-stats">
+                        <div class="import-stats" id="importStats">
                             <div class="stat-box">
                                 <div class="stat-number" id="totalItems">0</div>
                                 <div class="stat-label">Total Items</div>
@@ -455,18 +528,30 @@
         </div>
     </div>
 
-    <!-- ⭐ RESET MODAL ⭐ -->
-    <div id="resetModal" class="custom-modal-overlay">
-        <div class="confirm-card">
-            <div class="warning-icon"><span>!</span></div>
-            <h3>تحذير هام</h3>
-            <p>هل أنت متأكد من حذف جميع البيانات؟<br>لا يمكن التراجع.</p>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeResetModal()">تراجع</button>
-                <button class="btn-confirm" onclick="executeClearData()">نعم، احذف</button>
-            </div>
+  <!-- ⭐ RESET MODAL - Enhanced Bilingual ⭐ -->
+<div id="resetModal" class="custom-modal-overlay">
+    <div class="confirm-card">
+        <div class="warning-icon"><span>!</span></div>
+        <h3 style="margin-bottom: 5px;">⚠️ Important Warning</h3>
+        <h3 style="margin-top: 0; color: #f39c12; font-size: 1.2rem;">تحذير هام</h3>
+        <p style="text-align: center; line-height: 2;">
+            <strong style="display: block; margin-bottom: 8px;">Are you sure you want to delete all data?</strong>
+            <strong style="display: block; margin-bottom: 12px; font-family: Arial;">هل أنت متأكد من حذف جميع البيانات؟</strong>
+            <span style="color: #c0392b; font-size: 0.85em; display: block;">
+                ⛔ This action cannot be undone<br>
+                لا يمكن التراجع عن هذا الإجراء
+            </span>
+        </p>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeResetModal()">
+                ❌ Cancel<br><span style="font-size: 0.85em;">تراجع</span>
+            </button>
+            <button class="btn-confirm" onclick="executeClearData()">
+                🗑️ Yes, Delete<br><span style="font-size: 0.85em;">نعم، احذف</span>
+            </button>
         </div>
     </div>
+</div>
 
     <script>
         const SUPABASE_URL = 'https://ystkswmooiiksuwpzsgr.supabase.co';
@@ -70068,6 +70153,7 @@
         let allExpiries = [];
         let currentProduct = null;
         let importData = null;
+        let manualDates = []; // ⭐ Array to store manual dates before saving
         const fuse = new Fuse(PRODUCTS_DB, { keys: ['Code', 'Item Description', 'أسم المنتج', 'Brand'], threshold: 0.3 });
 
         // ⭐ TOAST NOTIFICATION SYSTEM ⭐
@@ -70124,9 +70210,6 @@
             importData = null;
         }
 
-        // Drag & Drop handlers
-        const dropzone = document.getElementById('dropzone');
-        
         document.addEventListener('DOMContentLoaded', () => {
             const dz = document.getElementById('dropzone');
             if (dz) {
@@ -70148,6 +70231,58 @@
                     }
                 });
             }
+
+            const list = document.getElementById('pharmacies');
+            let opts = '';
+            for(let i=1; i<=100; i++) opts += `<option value="PH-${String(i).padStart(4, '0')}">`;
+            list.innerHTML = opts;
+            document.getElementById('pharmacyInput').value = "PH-0066";
+            const now = new Date();
+            document.getElementById('reportMonth').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            updateMonthLabel();
+            loadData();
+            
+            const searchInput = document.getElementById('productSearch');
+            const autoList = document.getElementById('autocomplete-list');
+            searchInput.addEventListener('input', (e) => {
+                const val = e.target.value;
+                autoList.innerHTML = '';
+                if(!val) return;
+                const manualDiv = document.createElement('div');
+                manualDiv.className = 'autocomplete-item';
+                manualDiv.style.backgroundColor = '#e8f5e9';
+                manualDiv.innerHTML = `<div class="item-info"><span class="item-name-en" style="color:#27ae60; font-weight:bold;">➕ Add "${val}" Manually</span></div>`;
+                manualDiv.onclick = () => { openManualAdd(val); autoList.innerHTML = ''; };
+                autoList.appendChild(manualDiv);
+                let results = [];
+                if(!isNaN(val)) {
+                    const exact = PRODUCTS_DB.find(p => p.Code == val);
+                    if(exact) results.push({item: exact});
+                }
+                results = [...results, ...fuse.search(val)].slice(0, 10);
+                const seen = new Set();
+                const unique = results.filter(r => {
+                    const dup = seen.has(r.item.Code);
+                    seen.add(r.item.Code);
+                    return !dup;
+                });
+                unique.forEach(res => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.innerHTML = `<div class="item-info"><span class="item-name-en">${res.item["Item Description"]}</span><span class="item-name-ar">${res.item["أسم المنتج"] || ''}</span></div><span class="item-code">${res.item.Code}</span>`;
+                    div.onclick = () => {
+                        currentProduct = res.item;
+                        searchInput.value = res.item["Item Description"];
+                        autoList.innerHTML = '';
+                        renderActionArea();
+                    };
+                    autoList.appendChild(div);
+                });
+            });
+            
+            document.getElementById('resetModal').addEventListener('click', function(e) {
+                if (e.target === this) closeResetModal();
+            });
         });
 
         function handleFileSelect(event) {
@@ -70187,16 +70322,17 @@
 
             const items = [];
             let totalDates = 0;
+            let duplicatesCount = 0;
+            let newCount = 0;
             
             // Skip header rows (first 5 rows based on export format)
             for (let i = 5; i < rows.length; i++) {
                 const row = rows[i];
-                if (!row[1] || row[1].trim() === '') continue; // Skip empty rows
+                if (!row[1] || row[1].trim() === '') continue;
                 
                 const name = String(row[1]).trim();
                 const dates = [];
                 
-                // Parse dates from columns 2, 3, 4 (EXPIRY DATE columns)
                 for (let colIdx = 2; colIdx <= 4; colIdx++) {
                     if (row[colIdx]) {
                         const dateStr = String(row[colIdx]).trim();
@@ -70213,19 +70349,57 @@
                 }
             }
             
+            // ⭐ Count duplicates ⭐
+            items.forEach(item => {
+                item.dates.forEach(date => {
+                    const isDuplicate = allExpiries.some(existing => 
+                        existing.ph === ph &&
+                        existing.name.toLowerCase().trim() === item.name.toLowerCase().trim() &&
+                        existing.date === date
+                    );
+                    if (isDuplicate) {
+                        duplicatesCount++;
+                    } else {
+                        newCount++;
+                    }
+                });
+            });
+            
             importData = { ph, area, items };
             
-            // Display preview
+            // ⭐ Display preview with duplicate info ⭐
             document.getElementById('fileName').textContent = `📄 ${filename}`;
             document.getElementById('totalItems').textContent = items.length;
             document.getElementById('totalDates').textContent = totalDates;
+            
+            const statsHTML = `
+                <div class="stat-box">
+                    <div class="stat-number" style="color: #27ae60;">${newCount}</div>
+                    <div class="stat-label">New Items</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">${totalDates}</div>
+                    <div class="stat-label">Total Dates</div>
+                </div>
+                <div class="stat-box" style="${duplicatesCount > 0 ? 'border: 2px solid #f39c12;' : ''}">
+                    <div class="stat-number" style="color: ${duplicatesCount > 0 ? '#f39c12' : '#95a5a6'};">${duplicatesCount}</div>
+                    <div class="stat-label">Duplicates</div>
+                </div>
+            `;
+            
+            document.getElementById('importStats').innerHTML = statsHTML;
             document.getElementById('importPreview').style.display = 'block';
             
-            showToast('info', 'File Analyzed', `Found ${items.length} items with ${totalDates} expiry dates`);
+            if (duplicatesCount > 0) {
+                showToast('warning', 'Duplicates Detected', 
+                    `${duplicatesCount} duplicate items found. They will be skipped during import.`);
+            } else {
+                showToast('info', 'File Analyzed', 
+                    `Found ${items.length} items with ${totalDates} expiry dates - All new!`);
+            }
         }
 
         function parseDateString(str) {
-            // Parse formats like: "1,2,3-26" or "12-25" or "1-26,2-26"
             const dates = [];
             const parts = str.split(',').map(s => s.trim());
             
@@ -70258,30 +70432,50 @@
             const progressBar = document.getElementById('progressBar');
             progressContainer.style.display = 'block';
             
-            let imported = 0;
-            let total = importData.items.reduce((sum, item) => sum + item.dates.length, 0);
-            
             try {
                 const insertItems = [];
+                let duplicatesCount = 0;
+                let newCount = 0;
                 
+                // ⭐ Check for duplicates before importing ⭐
                 importData.items.forEach(item => {
                     item.dates.forEach(date => {
-                        insertItems.push({
-                            ph: importData.ph,
-                            area: importData.area,
-                            code: "IMP" + Math.floor(Math.random() * 100000),
-                            name: item.name,
-                            date: date
-                        });
+                        const isDuplicate = allExpiries.some(existing => 
+                            existing.ph === importData.ph &&
+                            existing.name.toLowerCase().trim() === item.name.toLowerCase().trim() &&
+                            existing.date === date
+                        );
+                        
+                        if (isDuplicate) {
+                            duplicatesCount++;
+                        } else {
+                            newCount++;
+                            insertItems.push({
+                                ph: importData.ph,
+                                area: importData.area,
+                                code: "IMP" + Math.floor(Math.random() * 100000),
+                                name: item.name,
+                                date: date
+                            });
+                        }
                     });
                 });
-
-                // Batch insert to Supabase
+                
+                // If no new items, stop here
+                if (insertItems.length === 0) {
+                    showToast('info', 'No New Data', 'All items already exist in the database!');
+                    progressContainer.style.display = 'none';
+                    setTimeout(() => closeImportModal(), 1500);
+                    return;
+                }
+                
+                progressBar.style.width = '50%';
+                
+                // Batch insert to Supabase (only new items)
                 const { data, error } = await sb.from('expiry_items').insert(insertItems).select();
                 
                 if (error) throw error;
                 
-                // Update local data
                 allExpiries.push(...data);
                 localStorage.setItem('expiryData_v8', JSON.stringify(allExpiries));
                 
@@ -70290,7 +70484,15 @@
                 setTimeout(() => {
                     closeImportModal();
                     refreshData();
-                    showToast('success', 'Import Complete!', `Successfully imported ${data.length} expiry records`);
+                            refreshViewTable(); // ⭐ ضيف السطر ده
+
+                    if (duplicatesCount > 0) {
+                        showToast('success', 'Import Complete!', 
+                            `✅ Imported: ${data.length} new items | ⚠️ Skipped: ${duplicatesCount} duplicates`);
+                    } else {
+                        showToast('success', 'Import Complete!', 
+                            `Successfully imported ${data.length} expiry records`);
+                    }
                 }, 500);
                 
             } catch (error) {
@@ -70298,45 +70500,51 @@
                 progressContainer.style.display = 'none';
             }
         }
+async function loadData() {
+    const ph = document.getElementById('pharmacyInput').value;
+    try {
+        const { data, error } = await sb.from('expiry_items').select('*').eq('ph', ph).order('created_at', { ascending: false });
+        if (error) throw error;
+        allExpiries = data || [];
+        localStorage.setItem('expiryData_v8', JSON.stringify(allExpiries));
+        refreshViewTable(); // ⭐ ضيف السطر ده
+    } catch (err) {
+        console.error(err);
+        allExpiries = JSON.parse(localStorage.getItem('expiryData_v8')) || [];
+        refreshViewTable(); // ⭐ ضيف السطر ده
+    }
+}
+async function addExpiry() {
+    const month = document.getElementById('expiryMonthNum').value;
+    const year = document.getElementById('expiryYearNum').value;
+    
+    // Convert MM/YY to YYYY-MM
+    const date = convertToISO(month, year);
+    
+    const ph = document.getElementById('pharmacyInput').value;
+    const area = document.getElementById('areaInput').value;
+    
+    if(!date || !ph) {
+        showToast('warning', 'Missing Fields', 'Please enter valid date (MM/YY) and pharmacy');
+        return;
+    }
 
-        async function loadData() {
-            const ph = document.getElementById('pharmacyInput').value;
-            try {
-                const { data, error } = await sb.from('expiry_items').select('*').eq('ph', ph).order('created_at', { ascending: false });
-                if (error) throw error;
-                allExpiries = data || [];
-                localStorage.setItem('expiryData_v8', JSON.stringify(allExpiries));
-            } catch (err) {
-                console.error(err);
-                allExpiries = JSON.parse(localStorage.getItem('expiryData_v8')) || [];
-            }
-        }
-
-        async function addExpiry() {
-            const date = document.getElementById('newDateInput').value;
-            const ph = document.getElementById('pharmacyInput').value;
-            const area = document.getElementById('areaInput').value;
-            
-            if(!date || !ph) {
-                showToast('warning', 'Missing Fields', 'Please select date and pharmacy first');
-                return;
-            }
-
-            const newItem = { ph, area, code: String(currentProduct.Code), name: currentProduct["Item Description"], date };
-            
-            try {
-                const { data, error } = await sb.from('expiry_items').insert([newItem]).select();
-                if (error) throw error;
-                
-                allExpiries.push({ id: data[0].id, ...newItem });
-                localStorage.setItem('expiryData_v8', JSON.stringify(allExpiries));
-                renderActionArea();
-                
-                showToast('success', 'Saved Successfully!', `${currentProduct["Item Description"]} added to ${formatShortDate(date)}`);
-            } catch (err) {
-                showToast('error', 'Error', err.message);
-            }
-        }
+    const newItem = { ph, area, code: String(currentProduct.Code), name: currentProduct["Item Description"], date };
+    
+    try {
+        const { data, error } = await sb.from('expiry_items').insert([newItem]).select();
+        if (error) throw error;
+        
+        allExpiries.push({ id: data[0].id, ...newItem });
+        localStorage.setItem('expiryData_v8', JSON.stringify(allExpiries));
+        renderActionArea();
+        refreshViewTable();
+        
+        showToast('success', 'Saved Successfully!', `${currentProduct["Item Description"]} added to ${formatShortDate(date)}`);
+    } catch (err) {
+        showToast('error', 'Error', err.message);
+    }
+}
 
         async function removeExpiry(id) {
             const item = allExpiries.find(x => x.id === id);
@@ -70358,73 +70566,139 @@
             document.body.appendChild(confirmModal);
         }
 
-        async function confirmDelete(id) {
-            try {
-                const { error } = await sb.from('expiry_items').delete().eq('id', id);
-                if (error) throw error;
-                
-                allExpiries = allExpiries.filter(x => x.id !== id);
-                localStorage.setItem('expiryData_v8', JSON.stringify(allExpiries));
-                renderActionArea();
-                
-                document.querySelector('.custom-modal-overlay:not(#resetModal)').remove();
-                showToast('success', 'Deleted', 'Expiry date removed successfully');
-            } catch (err) {
-                showToast('error', 'Error', err.message);
-            }
+      async function confirmDelete(id) {
+    try {
+        const { error } = await sb.from('expiry_items').delete().eq('id', id);
+        if (error) throw error;
+        
+        allExpiries = allExpiries.filter(x => x.id !== id);
+        localStorage.setItem('expiryData_v8', JSON.stringify(allExpiries));
+        renderActionArea();
+        refreshViewTable(); // ⭐ ضيف السطر ده
+        
+        document.querySelector('.custom-modal-overlay:not(#resetModal)').remove();
+        showToast('success', 'Deleted', 'Expiry date removed successfully');
+    } catch (err) {
+        showToast('error', 'Error', err.message);
+    }
+}
+
+
+      async function refreshData() { 
+    document.getElementById('actionArea').innerHTML = ''; 
+    document.getElementById('productSearch').value = ''; 
+    updateMonthLabel();
+    await loadData();
+    refreshViewTable(); // ⭐ ضيف السطر ده
+}
+async function executeClearData() {
+    const ph = document.getElementById('pharmacyInput').value;
+    try {
+        const { error } = await sb.from('expiry_items').delete().eq('ph', ph);
+        if (error) throw error;
+        
+        localStorage.removeItem('expiryData_v8');
+        allExpiries = [];
+        refreshData();
+        closeResetModal();
+        refreshViewTable(); // ⭐ ضيف السطر ده
+        
+        showToast('success', 'All Data Cleared', `All data for ${ph} has been deleted`);
+    } catch (err) {
+        showToast('error', 'Error', err.message);
+    }
+}
+
+      function addManualDate() {
+    const month = document.getElementById('manualMonthNum').value;
+    const year = document.getElementById('manualYearNum').value;
+    
+    // Convert MM/YY to YYYY-MM
+    const date = convertToISO(month, year);
+    
+    if (!date) {
+        showToast('warning', 'Invalid Date', 'Please enter valid month (1-12) and year (00-99)');
+        return;
+    }
+    
+    if (manualDates.includes(date)) {
+        showToast('warning', 'Duplicate Date', 'This date is already added!');
+        return;
+    }
+    
+    manualDates.push(date);
+    renderManualDates();
+    
+    // Clear inputs
+    document.getElementById('manualMonthNum').value = '';
+    document.getElementById('manualYearNum').value = '';
+    
+    showToast('success', 'Date Added', `Added ${formatShortDate(date)}`);
+}
+
+        function removeManualDate(date) {
+            manualDates = manualDates.filter(d => d !== date);
+            renderManualDates();
         }
 
-        async function refreshData() { 
-            document.getElementById('actionArea').innerHTML = ''; 
-            document.getElementById('productSearch').value = ''; 
-            updateMonthLabel();
-            await loadData();
-        }
-
-        async function executeClearData() {
-            const ph = document.getElementById('pharmacyInput').value;
-            try {
-                const { error } = await sb.from('expiry_items').delete().eq('ph', ph);
-                if (error) throw error;
-                
-                localStorage.removeItem('expiryData_v8');
-                allExpiries = [];
-                refreshData();
-                closeResetModal();
-                
-                showToast('success', 'All Data Cleared', `All data for ${ph} has been deleted`);
-            } catch (err) {
-                showToast('error', 'Error', err.message);
-            }
-        }
-
-        async function saveManualItem() {
-            const ph = document.getElementById('pharmacyInput').value;
-            const area = document.getElementById('areaInput').value;
-            const name = document.getElementById('manualName').value;
-            const date = document.getElementById('manualDateInput').value;
-            const code = document.getElementById('manualCode').value || "999" + Math.floor(Math.random() * 10000);
+        function renderManualDates() {
+            const container = document.getElementById('manualDatesList');
+            if (!container) return;
             
-            if(!name || !date || !ph) {
-                showToast('warning', 'Missing Fields', 'Please fill all required fields');
+            if (manualDates.length === 0) {
+                container.innerHTML = '<div style="color:#95a5a6; font-style:italic; text-align:center; padding:10px;">No dates added yet</div>';
                 return;
             }
-
-            const newItem = { ph, area, code: String(code), name: name + " (M)", date };
             
-            try {
-                const { data, error } = await sb.from('expiry_items').insert([newItem]).select();
-                if (error) throw error;
-                
-                allExpiries.push({ id: data[0].id, ...newItem });
-                localStorage.setItem('expiryData_v8', JSON.stringify(allExpiries));
-                refreshData(); 
-                
-                showToast('success', 'Manual Item Added', `${name} added successfully!`);
-            } catch (err) {
-                showToast('error', 'Error', err.message);
-            }
+            container.innerHTML = manualDates.map(date => 
+                `<div class="manual-date-tag">
+                    📅 ${formatShortDate(date)}
+                    <button onclick="removeManualDate('${date}')">&times;</button>
+                </div>`
+            ).join('');
         }
+
+      async function saveManualItem() {
+    const ph = document.getElementById('pharmacyInput').value;
+    const area = document.getElementById('areaInput').value;
+    const name = document.getElementById('manualName').value;
+    const code = document.getElementById('manualCode').value || "999" + Math.floor(Math.random() * 10000);
+    
+    if(!name || !ph) {
+        showToast('warning', 'Missing Fields', 'Please fill item name and select pharmacy');
+        return;
+    }
+
+    if(manualDates.length === 0) {
+        showToast('warning', 'No Dates', 'Please add at least one expiry date');
+        return;
+    }
+
+    try {
+        const insertItems = manualDates.map(date => ({
+            ph, 
+            area, 
+            code: String(code), 
+            name: name + " (M)", 
+            date
+        }));
+
+        const { data, error } = await sb.from('expiry_items').insert(insertItems).select();
+        if (error) throw error;
+        
+        allExpiries.push(...data);
+        localStorage.setItem('expiryData_v8', JSON.stringify(allExpiries));
+        
+        manualDates = [];
+        refreshData(); 
+        refreshViewTable(); // ⭐ ضيف السطر ده
+        
+        showToast('success', 'Manual Item Added', `${name} added with ${data.length} expiry dates!`);
+    } catch (err) {
+        showToast('error', 'Error', err.message);
+    }
+}
+
 
         function formatMonthLabel(isoDate) {
             if(!isoDate) return "";
@@ -70444,47 +70718,96 @@
             document.getElementById('monthLabelDisplay').innerText = val ? `Selected: ${formatMonthLabel(val)}` : '';
         }
 
-        function renderActionArea() {
-            if(!currentProduct) return;
-            const ph = document.getElementById('pharmacyInput').value;
-            const existing = allExpiries.filter(x => x.ph === ph && x.code == currentProduct.Code);
-            const html = `
-                <div class="product-area">
-                    <h3 style="margin:0; color:var(--primary)">${currentProduct["Item Description"]}</h3>
-                    <div style="color:var(--secondary); margin-bottom:10px; font-size:0.9em;">${currentProduct["أسم المنتج"]}</div>
-                    <div class="add-date-wrapper">
-                        <label style="margin:0; font-weight:600;">Expiry:</label>
-                        <input type="month" id="newDateInput">
-                        <button class="btn btn-primary" onclick="addExpiry()" style="padding: 8px 16px;">+ Add</button>
-                    </div>
-                    <div><strong>Registered:</strong>
-                        <div class="tags-container">
-                            ${existing.map(x => `<div class="tag">📅 ${formatShortDate(x.date)}<button onclick="removeExpiry(${x.id})">&times;</button></div>`).join('')}
-                        </div>
-                    </div>
+      function renderActionArea() {
+    if(!currentProduct) return;
+    const ph = document.getElementById('pharmacyInput').value;
+    const existing = allExpiries.filter(x => x.ph === ph && x.code == currentProduct.Code);
+    const html = `
+        <div class="product-area">
+            <h3 style="margin:0; color:var(--primary)">${currentProduct["Item Description"]}</h3>
+            <div style="color:var(--secondary); margin-bottom:10px; font-size:0.9em;">${currentProduct["أسم المنتج"]}</div>
+            <div class="add-date-wrapper">
+                <label style="margin:0; font-weight:600;">Expiry:</label>
+                <div class="date-input-group" style="margin:0;">
+                    <input 
+                        type="number" 
+                        id="expiryMonthNum" 
+                        class="month-input"
+                        placeholder="MM" 
+                        min="1" 
+                        max="12"
+                    >
+                    <span class="date-separator">/</span>
+                    <input 
+                        type="number" 
+                        id="expiryYearNum" 
+                        class="year-input"
+                        placeholder="YY" 
+                        min="00" 
+                        max="99"
+                    >
                 </div>
-            `;
-            document.getElementById('actionArea').innerHTML = html;
-        }
+                <button class="btn btn-primary" onclick="addExpiry()" style="padding: 8px 16px;">+ Add</button>
+            </div>
+            <div><strong>Registered:</strong>
+                <div class="tags-container">
+                    ${existing.map(x => `<div class="tag">📅 ${formatShortDate(x.date)}<button onclick="removeExpiry(${x.id})">&times;</button></div>`).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('actionArea').innerHTML = html;
+}
 
-        function openManualAdd(nameValue) {
-            currentProduct = null;
-            const html = `
-                <div class="product-area" style="border-left-color: #f39c12; background: #fffaf0;">
-                    <h3 style="margin:0 0 15px 0; color:#d35400">📝 Manual Entry</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-bottom: 15px;">
-                        <div class="input-group"><label>Code (Optional)</label><input type="text" id="manualCode" placeholder="999..."></div>
-                        <div class="input-group"><label>Item Name</label><input type="text" id="manualName" value="${nameValue}"></div>
-                    </div>
-                    <div class="add-date-wrapper">
-                        <label style="margin:0; font-weight:600;">Expiry:</label>
-                        <input type="month" id="manualDateInput">
-                        <button class="btn btn-warning" onclick="saveManualItem()">+ Add</button>
-                    </div>
+    function openManualAdd(nameValue) {
+    currentProduct = null;
+    manualDates = [];
+    const html = `
+        <div class="product-area" style="border-left-color: #f39c12; background: #fffaf0;">
+            <h3 style="margin:0 0 15px 0; color:#d35400">📝 Manual Entry</h3>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-bottom: 15px;">
+                <div class="input-group"><label>Code (Optional)</label><input type="text" id="manualCode" placeholder="999..."></div>
+                <div class="input-group"><label>Item Name</label><input type="text" id="manualName" value="${nameValue}"></div>
+            </div>
+            
+            <div class="add-date-wrapper">
+                <label style="margin:0; font-weight:600;">Add Expiry Date:</label>
+                <div class="date-input-group" style="margin:0;">
+                    <input 
+                        type="number" 
+                        id="manualMonthNum" 
+                        class="month-input"
+                        placeholder="MM" 
+                        min="1" 
+                        max="12"
+                    >
+                    <span class="date-separator">/</span>
+                    <input 
+                        type="number" 
+                        id="manualYearNum" 
+                        class="year-input"
+                        placeholder="YY" 
+                        min="00" 
+                        max="99"
+                    >
                 </div>
-            `;
-            document.getElementById('actionArea').innerHTML = html;
-        }
+                <button class="btn btn-primary" onclick="addManualDate()" style="padding: 8px 16px;">+ Add Date</button>
+            </div>
+
+            <div class="manual-dates-container">
+                <strong>📅 Added Dates:</strong>
+                <div class="manual-dates-list" id="manualDatesList">
+                    <div style="color:#95a5a6; font-style:italic; text-align:center; padding:10px;">No dates added yet</div>
+                </div>
+            </div>
+
+            <div style="margin-top:20px; text-align:right;">
+                <button class="btn btn-warning" onclick="saveManualItem()">💾 Save Item</button>
+            </div>
+        </div>
+    `;
+    document.getElementById('actionArea').innerHTML = html;
+}
 
         function getRiskDates() {
             const reportInput = document.getElementById('reportMonth').value;
@@ -70495,30 +70818,7 @@
             return { current: reportInput, next: `${nextY}-${String(nextM).padStart(2,'0')}` };
         }
 
-        function openViewModal() {
-            const ph = document.getElementById('pharmacyInput').value;
-            const risks = getRiskDates();
-            if(!risks) {
-                showToast('warning', 'Select Month', 'Please select a Report Month first');
-                return;
-            }
-            const items = allExpiries.filter(x => x.ph === ph).sort((a,b) => a.name.localeCompare(b.name));
-            const tbody = document.getElementById('viewTableBody');
-            tbody.innerHTML = items.length === 0 ? '<tr><td colspan="5" style="text-align:center;">No data</td></tr>' : '';
-            items.forEach((item, index) => {
-                let isAlert = false; let statusText = "OK";
-                if (item.date === risks.current) { isAlert = true; statusText = "REMOVE (Current)"; }
-                else if (item.date === risks.next) { isAlert = true; statusText = "REMOVE (Next)"; }
-                const tr = document.createElement('tr');
-                if(isAlert) tr.className = "row-alert";
-                tr.innerHTML = `<td>${index + 1}</td><td>${item.code}</td><td>${item.name}</td><td>${formatShortDate(item.date)}</td><td>${statusText}</td>`;
-                tbody.appendChild(tr);
-            });
-            document.getElementById('viewModal').style.display = 'block';
-        }
-        
-        function closeViewModal() { document.getElementById('viewModal').style.display = 'none'; }
-
+     
         function groupDatesSmartly(datesArray) {
             const byYear = {};
             datesArray.forEach(d => {
@@ -70534,6 +70834,49 @@
             });
             return parts; 
         }
+     function refreshViewTable() {
+    const ph = document.getElementById('pharmacyInput').value;
+    const risks = getRiskDates();
+    
+    const tbody = document.getElementById('viewTableBody');
+    
+    if(!risks) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #f39c12;">⚠️ Please select a Report Month first</td></tr>';
+        return;
+    }
+    
+    const items = allExpiries.filter(x => x.ph === ph).sort((a,b) => a.name.localeCompare(b.name));
+    
+    if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #95a5a6;">📭 No data available</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    items.forEach((item, index) => {
+        let isAlert = false; 
+        let statusText = "✅ OK";
+        
+        if (item.date === risks.current) { 
+            isAlert = true; 
+            statusText = "🔴 REMOVE (Current)"; 
+        } else if (item.date === risks.next) { 
+            isAlert = true; 
+            statusText = "⚠️ REMOVE (Next)"; 
+        }
+        
+        const tr = document.createElement('tr');
+        if(isAlert) tr.className = "row-alert";
+        tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${item.code}</td>
+            <td>${item.name}</td>
+            <td>${formatShortDate(item.date)}</td>
+            <td>${statusText}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
 
         function prepareReportData() {
             const ph = document.getElementById('pharmacyInput').value;
@@ -70609,62 +70952,26 @@
             showToast('success', 'Excel Exported', 'File downloaded successfully!');
         }
 
-        function openResetModal() { document.getElementById('resetModal').classList.addA('active'); }
+        function openResetModal() { document.getElementById('resetModal').classList.add('active'); }
         function closeResetModal() { document.getElementById('resetModal').classList.remove('active'); }
+        // ⭐ Convert MM/YY to ISO format (YYYY-MM) ⭐
+function convertToISO(month, year) {
+    if (!month || !year) return null;
+    
+    const m = parseInt(month);
+    const y = parseInt(year);
+    
+    // Validate
+    if (isNaN(m) || isNaN(y) || m < 1 || m > 12 || y < 0 || y > 99) {
+        return null;
+    }
+    
+    // Convert 2-digit year to 4-digit (assume 2000+)
+    const fullYear = 2000 + y;
+    
+    return `${fullYear}-${String(m).padStart(2, '0')}`;
+}
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            const list = document.getElementById('pharmacies');
-            let opts = '';
-            for(let i=1; i<=100; i++) opts += `<option value="PH-${String(i).padStart(4, '0')}">`;
-            list.innerHTML = opts;
-            document.getElementById('pharmacyInput').value = "PH-0066";
-            const now = new Date();
-            document.getElementById('reportMonth').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-            updateMonthLabel();
-            await loadData();
-            
-            const searchInput = document.getElementById('productSearch');
-            const autoList = document.getElementById('autocomplete-list');
-            searchInput.addEventListener('input', (e) => {
-                const val = e.target.value;
-                autoList.innerHTML = '';
-                if(!val) return;
-                const manualDiv = document.createElement('div');
-                manualDiv.className = 'autocomplete-item';
-                manualDiv.style.backgroundColor = '#e8f5e9';
-                manualDiv.innerHTML = `<div class="item-info"><span class="item-name-en" style="color:#27ae60; font-weight:bold;">➕ Add "${val}" Manually</span></div>`;
-                manualDiv.onclick = () => { openManualAdd(val); autoList.innerHTML = ''; };
-                autoList.appendChild(manualDiv);
-                let results = [];
-                if(!isNaN(val)) {
-                    const exact = PRODUCTS_DB.find(p => p.Code == val);
-                    if(exact) results.push({item: exact});
-                }
-                results = [...results, ...fuse.search(val)].slice(0, 10);
-                const seen = new Set();
-                const unique = results.filter(r => {
-                    const dup = seen.has(r.item.Code);
-                    seen.add(r.item.Code);
-                    return !dup;
-                });
-                unique.forEach(res => {
-                    const div = document.createElement('div');
-                    div.className = 'autocomplete-item';
-                    div.innerHTML = `<div class="item-info"><span class="item-name-en">${res.item["Item Description"]}</span><span class="item-name-ar">${res.item["أسم المنتج"] || ''}</span></div><span class="item-code">${res.item.Code}</span>`;
-                    div.onclick = () => {
-                        currentProduct = res.item;
-                        searchInput.value = res.item["Item Description"];
-                        autoList.innerHTML = '';
-                        renderActionArea();
-                    };
-                    autoList.appendChild(div);
-                });
-            });
-            
-            document.getElementById('resetModal').addEventListener('click', function(e) {
-                if (e.target === this) closeResetModal();
-            });
-        });
     </script>
 </body>
 </html>
