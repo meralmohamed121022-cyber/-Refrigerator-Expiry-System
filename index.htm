@@ -70894,7 +70894,7 @@ async function executeClearData() {
             const items = Object.values(grouped).sort((a,b) => a.name.localeCompare(b.name));
             const tbody = document.getElementById('printTableBody');
             tbody.innerHTML = '';
-            const minRows = Math.max(items.length, 38);
+            const minRows = Math.max(items.length, 37);
             for(let i=0; i<minRows; i++) {
                 const item = items[i];
                 let col1='', col2='', col3='', name='', id='';
