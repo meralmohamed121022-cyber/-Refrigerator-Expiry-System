@@ -519,7 +519,7 @@
         <strong>Alert:</strong> Items in <span style="color:#c62828; font-weight:bold;">RED</span> expire soon.
     </div>
     
-    <div style="overflow-x: auto; max-height: 500px; overflow-y: auto;">
+    <div style="overflow-x: auto;">
         <table class="view-table">
             <thead>
                 <tr>
@@ -593,7 +593,7 @@
 </div>
 
    
-            <div class="modal-footer"><button class="btn btn-secondary" style="background:#7f8c8d; color:white;" onclick="closeViewModal()">Close</button></div>
+            <div class="modal-footer"><button class="btn btn-secondary" style="background:#7f8c8d; color:white;" onclick="closeViewModal()">MONO</button></div>
         </div>
     </div>
 
@@ -70969,7 +70969,7 @@ async function executeClearData() {
             return parts; 
         }
        let selectedItems = new Set(); // Track selected items
-function refreshViewTable() {
+ function refreshViewTable() {
     const ph = document.getElementById('pharmacyInput').value;
     const risks = getRiskDates();
     
@@ -70986,14 +70986,27 @@ function refreshViewTable() {
         return 2;
     };
 
-    const items = allExpiries
+    // جمّع كل تواريخ نفس الـ code في مجموعة واحدة
+    const grouped = {};
+    allExpiries
         .filter(x => x.ph === ph)
-        .sort((a, b) => {
-            const riskA = riskOrder(a.date);
-            const riskB = riskOrder(b.date);
-            if (riskA !== riskB) return riskA - riskB;
-            return a.date.localeCompare(b.date) || a.name.localeCompare(b.name);
+        .forEach(x => {
+            if (!grouped[x.code]) {
+                grouped[x.code] = { ...x, dates: [], ids: [] };
+            }
+            grouped[x.code].dates.push(x.date);
+            grouped[x.code].ids.push(x.id);
         });
+
+    // رتّب حسب أقرب تاريخ خطر أولاً
+    const items = Object.values(grouped).sort((a, b) => {
+        const minDateA = a.dates.slice().sort()[0];
+        const minDateB = b.dates.slice().sort()[0];
+        const riskA = riskOrder(minDateA);
+        const riskB = riskOrder(minDateB);
+        if (riskA !== riskB) return riskA - riskB;
+        return minDateA.localeCompare(minDateB) || a.name.localeCompare(b.name);
+    });
     
     if (items.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: #95a5a6;">📭 No data available</td></tr>';
@@ -71005,10 +71018,10 @@ function refreshViewTable() {
         let isAlert = false; 
         let statusText = "✅ OK";
         
-        if (item.date === risks.current) { 
+        if (item.dates.includes(risks.current)) { 
             isAlert = true; 
             statusText = "🔴 REMOVE (Current)"; 
-        } else if (item.date === risks.next) { 
+        } else if (item.dates.includes(risks.next)) { 
             isAlert = true; 
             statusText = "⚠️ REMOVE (Next)"; 
         }
@@ -71016,16 +71029,18 @@ function refreshViewTable() {
         const tr = document.createElement('tr');
         if(isAlert) tr.className = "row-alert";
         
-        const isChecked = selectedItems.has(item.id);
+        // الـ checkbox يعمل على أول id في المجموعة
+        const firstId = item.ids[0];
+        const isChecked = item.ids.some(id => selectedItems.has(id));
         
         tr.innerHTML = `
             <td class="checkbox-cell">
-                <input type="checkbox" class="item-checkbox" data-id="${item.id}" ${isChecked ? 'checked' : ''} onchange="toggleItemSelection(${item.id})">
+                <input type="checkbox" class="item-checkbox" data-id="${firstId}" ${isChecked ? 'checked' : ''} onchange="toggleItemSelection(${firstId})">
             </td>
             <td>${index + 1}</td>
             <td>${item.code}</td>
             <td>${item.name}</td>
-            <td>${formatShortDate(item.date)}</td>
+            <td>${item.dates.slice().sort().map(d => formatShortDate(d)).join(' | ')}</td>
             <td>${statusText}</td>
             <td>
                 <div class="table-actions">
@@ -71041,6 +71056,7 @@ function refreshViewTable() {
         tbody.appendChild(tr);
     });
 }
+
 
         function prepareReportData() {
             const ph = document.getElementById('pharmacyInput').value;
