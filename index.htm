@@ -519,7 +519,7 @@
         <strong>Alert:</strong> Items in <span style="color:#c62828; font-weight:bold;">RED</span> expire soon.
     </div>
     
-    <div style="overflow-x: auto;">
+    <div style="overflow-x: auto; max-height: 500px; overflow-y: auto;">
         <table class="view-table">
             <thead>
                 <tr>
@@ -593,7 +593,7 @@
 </div>
 
    
-            <div class="modal-footer"><button class="btn btn-secondary" style="background:#7f8c8d; color:white;" onclick="closeViewModal()">MONO</button></div>
+            <div class="modal-footer"><button class="btn btn-secondary" style="background:#7f8c8d; color:white;" onclick="closeViewModal()">Close</button></div>
         </div>
     </div>
 
@@ -70969,10 +70969,9 @@ async function executeClearData() {
             return parts; 
         }
        let selectedItems = new Set(); // Track selected items
- function refreshViewTable() {
+   function refreshViewTable() {
     const ph = document.getElementById('pharmacyInput').value;
     const risks = getRiskDates();
-    
     const tbody = document.getElementById('viewTableBody');
     
     if(!risks) {
@@ -70980,32 +70979,24 @@ async function executeClearData() {
         return;
     }
     
-    const riskOrder = (date) => {
-        if (date === risks.current) return 0;
-        if (date === risks.next) return 1;
-        return 2;
-    };
+    // الحصول على تاريخ الشهر الحالي للمقارنة
+    const now = new Date();
+    const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    
+    // الترتيب: المنتهي أولاً، ثم حسب التاريخ الأقدم، ثم الاسم
+    const items = allExpiries.filter(x => x.ph === ph).sort((a, b) => {
+        const aExpired = a.date <= currentYM;
+        const bExpired = b.date <= currentYM;
 
-    // جمّع كل تواريخ نفس الـ code في مجموعة واحدة
-    const grouped = {};
-    allExpiries
-        .filter(x => x.ph === ph)
-        .forEach(x => {
-            if (!grouped[x.code]) {
-                grouped[x.code] = { ...x, dates: [], ids: [] };
-            }
-            grouped[x.code].dates.push(x.date);
-            grouped[x.code].ids.push(x.id);
-        });
+        // إذا كان أحدهما منتهي والآخر لا، المنتهي يسبق
+        if (aExpired && !bExpired) return -1;
+        if (!aExpired && bExpired) return 1;
 
-    // رتّب حسب أقرب تاريخ خطر أولاً
-    const items = Object.values(grouped).sort((a, b) => {
-        const minDateA = a.dates.slice().sort()[0];
-        const minDateB = b.dates.slice().sort()[0];
-        const riskA = riskOrder(minDateA);
-        const riskB = riskOrder(minDateB);
-        if (riskA !== riskB) return riskA - riskB;
-        return minDateA.localeCompare(minDateB) || a.name.localeCompare(b.name);
+        // إذا تساويا في الحالة (كلاهما منتهي أو كلاهما سليم)، نرتب بالتاريخ
+        if (a.date !== b.date) {
+            return a.date.localeCompare(b.date);
+        }
+        return a.name.localeCompare(b.name);
     });
     
     if (items.length === 0) {
@@ -71015,32 +71006,37 @@ async function executeClearData() {
     
     tbody.innerHTML = '';
     items.forEach((item, index) => {
-        let isAlert = false; 
         let statusText = "✅ OK";
+        let isCritical = false; // لتحديد التلوين بالأحمر
         
-        if (item.dates.includes(risks.current)) { 
-            isAlert = true; 
+        // شرط المنتهي (أحمر)
+        if (item.date <= currentYM) {
+            isCritical = true;
+            statusText = "❌ EXPIRED";
+        } 
+        // شرط الإزالة القريبة (تنبيه)
+        else if (item.date === risks.current) { 
             statusText = "🔴 REMOVE (Current)"; 
-        } else if (item.dates.includes(risks.next)) { 
-            isAlert = true; 
+        } else if (item.date === risks.next) { 
             statusText = "⚠️ REMOVE (Next)"; 
         }
         
         const tr = document.createElement('tr');
-        if(isAlert) tr.className = "row-alert";
+        // تلوين الصف بالأحمر لو منتهي أو ضمن شهور الإزالة المطلوبة
+        if(isCritical || item.date === risks.current || item.date === risks.next) {
+            tr.className = "row-alert";
+        }
         
-        // الـ checkbox يعمل على أول id في المجموعة
-        const firstId = item.ids[0];
-        const isChecked = item.ids.some(id => selectedItems.has(id));
+        const isChecked = selectedItems.has(item.id);
         
         tr.innerHTML = `
             <td class="checkbox-cell">
-                <input type="checkbox" class="item-checkbox" data-id="${firstId}" ${isChecked ? 'checked' : ''} onchange="toggleItemSelection(${firstId})">
+                <input type="checkbox" class="item-checkbox" data-id="${item.id}" ${isChecked ? 'checked' : ''} onchange="toggleItemSelection(${item.id})">
             </td>
             <td>${index + 1}</td>
             <td>${item.code}</td>
             <td>${item.name}</td>
-            <td>${item.dates.slice().sort().map(d => formatShortDate(d)).join(' | ')}</td>
+            <td>${formatShortDate(item.date)}</td>
             <td>${statusText}</td>
             <td>
                 <div class="table-actions">
@@ -71056,8 +71052,6 @@ async function executeClearData() {
         tbody.appendChild(tr);
     });
 }
-
-
         function prepareReportData() {
             const ph = document.getElementById('pharmacyInput').value;
             const area = document.getElementById('areaInput').value;
