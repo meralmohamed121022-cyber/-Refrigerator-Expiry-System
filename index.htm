@@ -474,7 +474,10 @@
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     margin-left: 10px;
 }
-
+.expiry-cell-clickable:hover {
+    background-color: #f0f7ff;
+    border-radius: 4px;
+}
     </style>
 </head>
 <body>
@@ -70969,7 +70972,7 @@ async function executeClearData() {
             return parts; 
         }
        let selectedItems = new Set(); // Track selected items
-   function refreshViewTable() {
+       function refreshViewTable() {
     const ph = document.getElementById('pharmacyInput').value;
     const risks = getRiskDates();
     const tbody = document.getElementById('viewTableBody');
@@ -70979,20 +70982,16 @@ async function executeClearData() {
         return;
     }
     
-    // الحصول على تاريخ الشهر الحالي للمقارنة
     const now = new Date();
     const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     
-    // الترتيب: المنتهي أولاً، ثم حسب التاريخ الأقدم، ثم الاسم
     const items = allExpiries.filter(x => x.ph === ph).sort((a, b) => {
         const aExpired = a.date <= currentYM;
         const bExpired = b.date <= currentYM;
 
-        // إذا كان أحدهما منتهي والآخر لا، المنتهي يسبق
         if (aExpired && !bExpired) return -1;
         if (!aExpired && bExpired) return 1;
 
-        // إذا تساويا في الحالة (كلاهما منتهي أو كلاهما سليم)، نرتب بالتاريخ
         if (a.date !== b.date) {
             return a.date.localeCompare(b.date);
         }
@@ -71007,14 +71006,12 @@ async function executeClearData() {
     tbody.innerHTML = '';
     items.forEach((item, index) => {
         let statusText = "✅ OK";
-        let isCritical = false; // لتحديد التلوين بالأحمر
+        let isCritical = false;
         
-        // شرط المنتهي (أحمر)
         if (item.date <= currentYM) {
             isCritical = true;
             statusText = "❌ EXPIRED";
         } 
-        // شرط الإزالة القريبة (تنبيه)
         else if (item.date === risks.current) { 
             statusText = "🔴 REMOVE (Current)"; 
         } else if (item.date === risks.next) { 
@@ -71022,7 +71019,6 @@ async function executeClearData() {
         }
         
         const tr = document.createElement('tr');
-        // تلوين الصف بالأحمر لو منتهي أو ضمن شهور الإزالة المطلوبة
         if(isCritical || item.date === risks.current || item.date === risks.next) {
             tr.className = "row-alert";
         }
@@ -71036,7 +71032,10 @@ async function executeClearData() {
             <td>${index + 1}</td>
             <td>${item.code}</td>
             <td>${item.name}</td>
-            <td>${formatShortDate(item.date)}</td>
+            <td style="cursor:pointer; text-decoration:underline; font-weight:bold; color:var(--primary);" 
+                onclick="showQuickDates(event, '${item.code}', '${item.name.replace(/'/g, "\\'")}')">
+                ${formatShortDate(item.date)}
+            </td>
             <td>${statusText}</td>
             <td>
                 <div class="table-actions">
@@ -71405,7 +71404,105 @@ async function saveEditedDates() {
         showToast('error', 'Error', err.message);
     }
 }
+function showQuickDates(event, code, name) {
 
+    event.stopPropagation();
+
+    
+
+    // إزالة أي بوب اب قديم لو موجود
+
+    const oldPopup = document.getElementById('quick-date-popup');
+
+    if (oldPopup) oldPopup.remove();
+
+
+
+    const ph = document.getElementById('pharmacyInput').value;
+
+    const relatedItems = allExpiries.filter(x => x.ph === ph && x.code === code);
+
+    
+
+    // ترتيب التواريخ المسجلة
+
+    const dateList = relatedItems
+
+        .sort((a, b) => a.date.localeCompare(b.date))
+
+        .map(x => `<div style="padding:4px 0; border-bottom:1px solid #eee;">📅 ${formatShortDate(x.date)}</div>`)
+
+        .join('');
+
+
+
+    // إنشاء العنصر
+
+    const popup = document.createElement('div');
+
+    popup.id = 'quick-date-popup';
+
+    popup.style.cssText = `
+
+        position: fixed;
+
+        top: ${event.clientY + 10}px;
+
+        left: ${event.clientX + 10}px;
+
+        background: white;
+
+        border: 2px solid var(--primary);
+
+        border-radius: 8px;
+
+        padding: 12px;
+
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+
+        z-index: 9999;
+
+        min-width: 150px;
+
+    `;
+
+
+
+    popup.innerHTML = `
+
+        <div style="font-weight:bold; color:var(--secondary); margin-bottom:8px; font-size:0.85em; border-bottom:2px solid var(--primary)">${name}</div>
+
+        ${dateList}
+
+        <div style="text-align:right; margin-top:8px;">
+
+            <button onclick="this.parentElement.parentElement.remove()" style="background:#eee; border:none; border-radius:4px; cursor:pointer; padding:2px 8px;">Close</button>
+
+        </div>
+
+    `;
+
+
+
+    document.body.appendChild(popup);
+
+
+
+    // إغلاق البوب اب لو ضغطت في أي مكان بره
+
+    document.addEventListener('click', function closePopup(e) {
+
+        if (!popup.contains(e.target)) {
+
+            popup.remove();
+
+            document.removeEventListener('click', closePopup);
+
+        }
+
+    });
+
+}
     </script>
 </body>
 </html>
